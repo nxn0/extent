@@ -109,7 +109,7 @@
     return activeTarget ? exitMode() : enterMode();
   }
 
-  function onMessage(message) {
+  async function onMessage(message) {
     if (message?.type === "VIDEO_VIEWPORT_TOGGLE") {
       return toggleMode();
     }
