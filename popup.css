@@ -1,0 +1,148 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  margin: 0;
+  color: #202b2a;
+  background: #f5f5f0;
+  font: 14px/1.4 "Segoe UI", sans-serif;
+}
+
+main {
+  padding: 18px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 18px;
+}
+
+.mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: #176f63;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+header p,
+section p {
+  margin-top: 3px;
+  color: #596663;
+  font-size: 12px;
+}
+
+#site-name {
+  max-width: 235px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button {
+  font: inherit;
+}
+
+.primary {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  background: #176f63;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.primary:hover:not(:disabled) {
+  background: #10584e;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #d6dcd7;
+}
+
+h2 {
+  font-size: 13px;
+}
+
+section p {
+  max-width: 205px;
+}
+
+.switch {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  padding: 4px;
+  color: #34413e;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.switch-track {
+  display: flex;
+  width: 32px;
+  height: 18px;
+  align-items: center;
+  border-radius: 9px;
+  padding: 2px;
+  background: #aab4af;
+  transition: background 120ms ease;
+}
+
+.switch-track span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 120ms ease;
+}
+
+.switch[aria-pressed="true"] .switch-track {
+  background: #176f63;
+}
+
+.switch[aria-pressed="true"] .switch-track span {
+  transform: translateX(14px);
+}
+
+#status {
+  min-height: 18px;
+  margin-top: 9px;
+  color: #9a3f2d;
+  font-size: 12px;
+}

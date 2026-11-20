@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Video Viewport",
+  "version": "0.1.0",
+  "description": "Expand a video to the browser content area without hiding browser controls.",
+  "permissions": ["activeTab", "scripting"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "scripts": ["src/background.js"]
+  },
+  "action": {
+    "default_title": "Video Viewport",
+    "default_popup": "popup.html"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "video-viewport@example.org",
+      "strict_min_version": "128.0"
+    }
+  }
+}
