@@ -32,9 +32,15 @@ async function loadTab() {
   toggleModeButton.disabled = !isYouTubeVideo;
   toggleSiteButton.disabled = !isYouTubeVideo;
   if (!isYouTubeVideo) {
-    showStatus("Open a YouTube video page to use the player-only tab.");
+    showStatus("Open a YouTube video page to use the player-only view.");
     return;
   }
+
+  const viewerStatus = await browser.runtime.sendMessage({
+    type: "VIDEO_VIEWPORT_GET_VIEWER_STATUS",
+    tabId: activeTab.id
+  });
+  toggleModeButton.textContent = viewerStatus?.enabled ? "Restore regular YouTube page" : "Enter player view";
 
   const siteStatus = await browser.runtime.sendMessage({
     type: "VIDEO_VIEWPORT_GET_SITE_STATUS",
@@ -51,7 +57,7 @@ toggleModeButton.addEventListener("click", async () => {
     if (!await browser.permissions.contains({ origins: requestedOrigins })) {
       const granted = await browser.permissions.request({ origins: requestedOrigins });
       if (!granted) {
-        showStatus("Site access is needed to read the video time and open its player.");
+        showStatus("Site access is needed to read the video time and toggle the player view.");
         return;
       }
     }
@@ -61,6 +67,8 @@ toggleModeButton.addEventListener("click", async () => {
     });
     if (result?.error) {
       showStatus(result.error);
+    } else {
+      toggleModeButton.textContent = result?.restored ? "Enter player view" : "Restore regular YouTube page";
     }
   } catch (error) {
     showStatus(error.message || "Could not toggle video view.");

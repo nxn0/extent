@@ -27,8 +27,7 @@ function makeBrowserHarness({ sourceUrl, playbackTime = 87, styleWorks = true })
   const onMessage = new EventHook();
   const onUpdated = new EventHook();
   const onRemoved = new EventHook();
-  const sourceTab = { id: 11, windowId: 3, url: sourceUrl, status: "complete" };
-  let newTab = null;
+  const sourceTab = { id: 11, windowId: 3, url: sourceUrl, status: "complete", active: true };
 
   const browser = {
     permissions: {
@@ -37,20 +36,18 @@ function makeBrowserHarness({ sourceUrl, playbackTime = 87, styleWorks = true })
     tabs: {
       onUpdated,
       onRemoved,
-      get: async (tabId) => tabId === sourceTab.id ? sourceTab : newTab,
-      create: async (options) => {
-        calls.push(["create", options]);
-        newTab = { id: 22, windowId: options.windowId ?? 3, status: "loading", ...options };
-        queueMicrotask(() => {
-          newTab.status = "complete";
-          onUpdated.emit(newTab.id, { status: "complete" }, newTab);
-        });
-        return newTab;
-      },
+      get: async (tabId) => tabId === sourceTab.id ? sourceTab : null,
       update: async (tabId, options) => {
-        calls.push(["activate", tabId, options]);
-        newTab.active = options.active;
-        return newTab;
+        calls.push(["navigate", tabId, options]);
+        if (options.url) {
+          sourceTab.url = options.url;
+          sourceTab.status = "loading";
+          queueMicrotask(() => {
+            sourceTab.status = "complete";
+            onUpdated.emit(tabId, { status: "complete" }, sourceTab);
+          }, 5);
+        }
+        return sourceTab;
       },
       remove: async (tabId) => calls.push(["remove", tabId])
     },
@@ -60,12 +57,13 @@ function makeBrowserHarness({ sourceUrl, playbackTime = 87, styleWorks = true })
         if (target.tabId === sourceTab.id && /currentTime/.test(func.toString())) {
           return [{ result: { url: sourceUrl, time: playbackTime } }];
         }
-        if (target.tabId === 22 && /getComputedStyle/.test(func.toString())) {
+        if (target.tabId === 11 && /getComputedStyle/.test(func.toString())) {
           return [{ result: styleWorks }];
         }
         return [{ result: undefined }];
       },
-      insertCSS: async (options) => calls.push(["insertCSS", options])
+      insertCSS: async (options) => calls.push(["insertCSS", options]),
+      removeCSS: async (options) => calls.push(["removeCSS", options])
     },
     runtime: {
       onMessage,
@@ -74,11 +72,12 @@ function makeBrowserHarness({ sourceUrl, playbackTime = 87, styleWorks = true })
   };
 
   const core = { parseYouTubeVideoId };
-  const sandbox = { browser, VideoViewportCore: core, URL, Map, Set, Promise, setTimeout, clearTimeout, console };
+  const sandbox = { browser, VideoViewportCore: core, URL, Map, Set, Promise, setTimeout, clearTimeout, setInterval, clearInterval, console };
   vm.runInNewContext(readFileSync("src/background.js", "utf8"), sandbox, { filename: "src/background.js" });
 
   return {
     calls,
+    sourceTab,
     async openViewer() {
       const listener = [...onMessage.listeners][0];
       return listener({ type: "VIDEO_VIEWPORT_OPEN_VIEWER", tabId: sourceTab.id }, {});
@@ -86,33 +85,24 @@ function makeBrowserHarness({ sourceUrl, playbackTime = 87, styleWorks = true })
   };
 }
 
-test("opens a player-only YouTube watch context, not a standalone embed URL", async () => {
+test("applies player-only CSS to the active YouTube tab without navigating", async () => {
   const harness = makeBrowserHarness({
     sourceUrl: "https://www.youtube.com/watch?v=sX2c8cYPZ6o&feature=share",
     playbackTime: 123.8
   });
 
   const result = await harness.openViewer();
-  const createdTab = harness.calls.find(([name]) => name === "create")[1];
-  const styleCall = harness.calls.find(([name]) => name === "insertCSS")[1];
-  const activationIndex = harness.calls.findIndex(([name]) => name === "activate");
-  const styleIndex = harness.calls.findIndex(([name]) => name === "insertCSS");
-  const pauseIndex = harness.calls.findIndex(([name, tabId, source]) => name === "execute" && tabId === 11 && source.includes("pause"));
-  const url = new URL(createdTab.url);
+  const styleCall = harness.calls.find(([name]) => name === "insertCSS");
 
   assert.equal(result.opened, true);
-  assert.equal(url.origin, "https://www.youtube.com");
-  assert.equal(url.pathname, "/watch");
-  assert.equal(url.searchParams.get("v"), "sX2c8cYPZ6o");
-  assert.equal(url.searchParams.get("t"), "123");
-  assert.equal(createdTab.active, false);
-  assert.equal(styleCall.target.tabId, 22);
-  assert.deepEqual(Array.from(styleCall.files), ["src/viewer.css"]);
-  assert.ok(styleIndex >= 0 && activationIndex > styleIndex);
-  assert.ok(pauseIndex > styleIndex && activationIndex > pauseIndex);
+  assert.equal(harness.sourceTab.url, "https://www.youtube.com/watch?v=sX2c8cYPZ6o&feature=share");
+  assert.equal(styleCall[1].target.tabId, 11);
+  assert.deepEqual(Array.from(styleCall[1].files), ["src/viewer.css"]);
+  assert.ok(!harness.calls.some(([name]) => name === "navigate"));
+  assert.ok(!harness.calls.some(([name]) => name === "create"));
 });
 
-test("does not leave an unstyled YouTube tab open when player CSS verification fails", async () => {
+test("removes player CSS when verification fails", async () => {
   const harness = makeBrowserHarness({
     sourceUrl: "https://www.youtube.com/watch?v=sX2c8cYPZ6o",
     styleWorks: false
@@ -121,15 +111,16 @@ test("does not leave an unstyled YouTube tab open when player CSS verification f
   const result = await harness.openViewer();
 
   assert.match(result.error, /player-only layout did not apply/);
-  assert.ok(harness.calls.some(([name, tabId]) => name === "remove" && tabId === 22));
-  assert.ok(!harness.calls.some(([name]) => name === "activate"));
+  assert.equal(harness.sourceTab.url, "https://www.youtube.com/watch?v=sX2c8cYPZ6o");
+  assert.ok(harness.calls.some(([name]) => name === "removeCSS"));
+  assert.ok(!harness.calls.some(([name]) => name === "navigate"));
 });
 
-test("refuses non-YouTube pages without creating a tab", async () => {
+test("refuses non-YouTube pages without injecting CSS", async () => {
   const harness = makeBrowserHarness({ sourceUrl: "https://example.com/watch?v=notyoutube" });
 
   const result = await harness.openViewer();
 
   assert.match(result.error, /Open a YouTube video page/);
-  assert.ok(!harness.calls.some(([name]) => name === "create"));
+  assert.ok(!harness.calls.some(([name]) => name === "navigate"));
 });

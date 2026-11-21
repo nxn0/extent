@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Video Viewport",
   "version": "0.1.0",
-  "description": "Open a YouTube video in a clean player-only browser tab.",
+  "description": "Toggle the active YouTube tab into a clean player-only view.",
   "permissions": ["activeTab", "scripting"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "background": {

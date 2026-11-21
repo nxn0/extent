@@ -1,5 +1,6 @@
 const VIEWER_STYLE = "src/viewer.css";
 const YOUTUBE_PATTERN = "https://www.youtube.com/*";
+const viewerStates = new Map();
 
 function registeredScriptId(pattern) {
   return `video-viewport-${pattern.replace(/[^a-z0-9]/gi, "-")}`;
@@ -42,11 +43,13 @@ async function setSiteEnabled(pattern, enabled) {
 
 async function openViewer(tabId) {
   try {
-    const sourceTab = await browser.tabs.get(tabId);
-    const originPattern = new URL(sourceTab.url).origin + "/*";
-    if (!await browser.permissions.contains({ origins: [originPattern] })) {
-      return { error: "Allow access to this site before opening its video in a separate tab." };
+    if (viewerStates.has(tabId)) {
+      await browser.scripting.removeCSS({ target: { tabId }, files: [VIEWER_STYLE] });
+      viewerStates.delete(tabId);
+      return { opened: false, restored: true };
     }
+
+    const sourceTab = await browser.tabs.get(tabId);
     if (!await browser.permissions.contains({ origins: [YOUTUBE_PATTERN] })) {
       return { error: "Allow YouTube access so the player-only layout can be applied." };
     }
@@ -61,79 +64,36 @@ async function openViewer(tabId) {
 
     const videoId = globalThis.VideoViewportCore.parseYouTubeVideoId(playback.url);
     if (!videoId) {
-      return { error: "Open a YouTube video page to use the video-only player." };
+      return { error: "Open a YouTube video page to use the player-only view." };
     }
 
-    const viewerUrl = new URL("https://www.youtube.com/watch");
-    viewerUrl.searchParams.set("v", videoId);
-    viewerUrl.searchParams.set("autoplay", "1");
-    viewerUrl.searchParams.set("t", String(Math.floor(playback.time || 0)));
-    const viewerTab = await browser.tabs.create({ url: viewerUrl.href, active: false });
-
-    try {
-      await waitForTabComplete(viewerTab.id);
-      await browser.scripting.insertCSS({ target: { tabId: viewerTab.id }, files: [VIEWER_STYLE] });
-      const [{ result: isStyled }] = await browser.scripting.executeScript({
-        target: { tabId: viewerTab.id },
-        func: () => getComputedStyle(document.documentElement).getPropertyValue("--vv-player-only").trim() === "enabled"
-      });
-      if (!isStyled) {
-        throw new Error("YouTube loaded, but the player-only layout did not apply.");
-      }
-
-      await browser.scripting.executeScript({
-        target: { tabId },
-        func: () => document.querySelector("#movie_player video")?.pause()
-      });
-      await browser.tabs.update(viewerTab.id, { active: true });
-      return { opened: true };
-    } catch (error) {
-      await browser.tabs.remove(viewerTab.id).catch(() => undefined);
-      return { error: error.message || "Could not apply the player-only layout." };
+    await browser.scripting.insertCSS({ target: { tabId }, files: [VIEWER_STYLE] });
+    const [{ result: isStyled }] = await browser.scripting.executeScript({
+      target: { tabId },
+      func: () => getComputedStyle(document.documentElement).getPropertyValue("--vv-player-only").trim() === "enabled"
+    });
+    if (!isStyled) {
+      throw new Error("YouTube loaded, but the player-only layout did not apply.");
     }
+
+    viewerStates.set(tabId, { videoId, currentTime: playback.time });
+    return { opened: true };
   } catch (error) {
-    return { error: error.message || "Could not open the video in a separate tab." };
+    await browser.scripting.removeCSS({ target: { tabId }, files: [VIEWER_STYLE] }).catch(() => undefined);
+    viewerStates.delete(tabId);
+    return { error: error.message || "Could not toggle the same-tab player view." };
   }
 }
 
-function waitForTabComplete(tabId) {
-  return new Promise((resolve, reject) => {
-    const finish = (error) => {
-      clearTimeout(timeout);
-      browser.tabs.onUpdated.removeListener(onUpdated);
-      browser.tabs.onRemoved.removeListener(onRemoved);
-      if (error) {
-        reject(error);
-      } else {
-        resolve();
-      }
-    };
-
-    const timeout = setTimeout(() => finish(new Error("Timed out waiting for YouTube to load.")), 20000);
-    const onUpdated = (updatedTabId, changeInfo) => {
-      if (updatedTabId === tabId && changeInfo.status === "complete") {
-        finish();
-      }
-    };
-    const onRemoved = (removedTabId) => {
-      if (removedTabId === tabId) {
-        finish(new Error("The player tab was closed before it finished loading."));
-      }
-    };
-
-    browser.tabs.onUpdated.addListener(onUpdated);
-    browser.tabs.onRemoved.addListener(onRemoved);
-    browser.tabs.get(tabId).then((tab) => {
-      if (tab.status === "complete") {
-        finish();
-      }
-    }).catch(finish);
-  });
-}
-
 browser.runtime.onMessage.addListener(async (message, sender) => {
+  const tabId = message.tabId || sender.tab?.id;
+
   if (message?.type === "VIDEO_VIEWPORT_OPEN_VIEWER") {
-    return openViewer(message.tabId || sender.tab?.id);
+    return openViewer(tabId);
+  }
+
+  if (message?.type === "VIDEO_VIEWPORT_GET_VIEWER_STATUS") {
+    return { enabled: Number.isInteger(tabId) && viewerStates.has(tabId) };
   }
 
   if (message?.type === "VIDEO_VIEWPORT_GET_SITE_STATUS") {
