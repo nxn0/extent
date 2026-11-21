@@ -86,5 +86,8 @@ ytd-popup-container {
   max-height: none !important;
   transform: none !important;
   object-position: center !important;
-  object-fit: contain !important;
+  object-fit: fill !important;
+  transform: translateY(-50%) scaleY(1.08) !important;
+  top: 50% !important;
+  bottom: auto !important;
 }

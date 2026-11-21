@@ -10,9 +10,11 @@ test("player-only stylesheet hides YouTube page chrome", () => {
   }
 });
 
-test("player-only stylesheet pins video to the full player viewport", () => {
+test("player-only stylesheet stretches video to the full player viewport", () => {
   assert.match(viewerCss, /#movie_player\s*\{[^}]*position:\s*fixed/);
   assert.match(viewerCss, /#movie_player video\s*\{[^}]*position:\s*absolute/);
   assert.match(viewerCss, /#movie_player video\s*\{[^}]*inset:\s*0/);
+  assert.match(viewerCss, /#movie_player video\s*\{[^}]*object-fit:\s*fill/);
+  assert.match(viewerCss, /#movie_player video\s*\{[^}]*scaleY\(1\.08\)/);
   assert.match(viewerCss, /--vv-player-only:\s*enabled/);
 });
