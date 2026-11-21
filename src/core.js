@@ -33,5 +33,26 @@
     }
   }
 
-  return { selectVideo, sitePattern };
+  function parseYouTubeVideoId(rawUrl) {
+    try {
+      const url = new URL(rawUrl);
+      let videoId = null;
+
+      if (url.hostname === "youtu.be" || url.hostname === "www.youtu.be") {
+        videoId = url.pathname.split("/").filter(Boolean)[0];
+      } else if (url.hostname === "youtube.com" || url.hostname.endsWith(".youtube.com")) {
+        if (url.pathname === "/watch") {
+          videoId = url.searchParams.get("v");
+        } else {
+          videoId = url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1] ?? null;
+        }
+      }
+
+      return videoId && /^[\w-]{11}$/.test(videoId) ? videoId : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return { selectVideo, sitePattern, parseYouTubeVideoId };
 });

@@ -2,11 +2,11 @@
   "manifest_version": 3,
   "name": "Video Viewport",
   "version": "0.1.0",
-  "description": "Expand a video to the browser content area without hiding browser controls.",
+  "description": "Open a YouTube video in a clean player-only browser tab.",
   "permissions": ["activeTab", "scripting"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "background": {
-    "scripts": ["src/background.js"]
+    "scripts": ["src/core.js", "src/background.js"]
   },
   "action": {
     "default_title": "Video Viewport",

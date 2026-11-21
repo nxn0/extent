@@ -1,0 +1,90 @@
+html,
+body {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  background: #000 !important;
+}
+
+html {
+  --vv-player-only: enabled !important;
+}
+
+ytd-app {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  background: #000 !important;
+}
+
+ytd-watch-flexy {
+  position: fixed !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  transform: none !important;
+  background: #000 !important;
+}
+
+#masthead-container,
+ytd-mini-guide-renderer,
+#secondary,
+#below,
+#comments,
+#chips,
+#guide,
+#player-ads,
+#panels,
+ytd-popup-container {
+  display: none !important;
+}
+
+#columns,
+#primary,
+#player,
+#player-container-outer,
+#player-container-inner,
+#movie_player {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #000 !important;
+  transform: none !important;
+}
+
+#movie_player .html5-video-container {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
+}
+
+#movie_player {
+  z-index: 2147483000 !important;
+}
+
+#movie_player video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  transform: none !important;
+  object-position: center !important;
+  object-fit: contain !important;
+}

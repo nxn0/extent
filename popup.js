@@ -28,30 +28,37 @@ async function loadTab() {
   }
 
   siteName.textContent = new URL(activeTab.url).hostname;
-  toggleModeButton.disabled = false;
-  toggleSiteButton.disabled = false;
+  const isYouTubeVideo = Boolean(VideoViewportCore.parseYouTubeVideoId(activeTab.url));
+  toggleModeButton.disabled = !isYouTubeVideo;
+  toggleSiteButton.disabled = !isYouTubeVideo;
+  if (!isYouTubeVideo) {
+    showStatus("Open a YouTube video page to use the player-only tab.");
+    return;
+  }
+
   const siteStatus = await browser.runtime.sendMessage({
     type: "VIDEO_VIEWPORT_GET_SITE_STATUS",
     pattern: currentPattern
   });
   setSiteSwitch(siteStatus.enabled);
-
-  const tabStatus = await browser.runtime.sendMessage({
-    type: "VIDEO_VIEWPORT_GET_TAB_STATUS",
-    tabId: activeTab.id
-  });
-  toggleModeButton.textContent = tabStatus.active ? "Restore page" : "Expand video";
 }
 
 toggleModeButton.addEventListener("click", async () => {
   toggleModeButton.disabled = true;
   showStatus("");
   try {
+    const requestedOrigins = [...new Set([currentPattern, "https://www.youtube.com/*"])];
+    if (!await browser.permissions.contains({ origins: requestedOrigins })) {
+      const granted = await browser.permissions.request({ origins: requestedOrigins });
+      if (!granted) {
+        showStatus("Site access is needed to read the video time and open its player.");
+        return;
+      }
+    }
     const result = await browser.runtime.sendMessage({
-      type: "VIDEO_VIEWPORT_TOGGLE_TAB",
+      type: "VIDEO_VIEWPORT_OPEN_VIEWER",
       tabId: activeTab.id
     });
-    toggleModeButton.textContent = result?.active ? "Restore page" : "Expand video";
     if (result?.error) {
       showStatus(result.error);
     }

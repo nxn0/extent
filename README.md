@@ -1,17 +1,17 @@
 # Video Viewport
 
-A Firefox extension that expands a YouTube player or standard HTML5 video to fill the webpage area without entering fullscreen. Firefox's tabs and address bar remain visible, as does the operating system taskbar.
+A Firefox extension that opens the current YouTube video in a new tab and hides the watch-page layout there, leaving the player stretched to the browser content area. YouTube requires a normal HTTPS watch-page context for playback; its standalone embed URL can fail with Error 153 when there is no valid HTTP referrer. The original tab is not restyled, and its video pauses to avoid overlapping audio.
 
 ## Try it in Firefox
 
 1. Open `about:debugging#/runtime/this-firefox`.
 2. Select **Load Temporary Add-on…** and choose this folder's `manifest.json`.
-3. Open a page with a video and use the extension toolbar button to expand or restore it.
-4. To add an in-player exit control on a site, open the extension popup on that site and turn on **Player button**. Firefox will ask for access to that site. The control appears while viewport mode is active.
+3. Open a YouTube video and choose **Open video-only tab**. Firefox asks for access to YouTube the first time.
+4. To add a quick button to the original page, turn on **Quick viewer button** in the popup for that site.
 
-The toolbar action only injects code into the current tab after it is clicked. Site access for the in-player control is optional and can be turned off in the popup.
+The new tab loads YouTube's normal watch page to preserve its required referrer context, then the extension hides the surrounding interface only in that tab. The source tab's layout is untouched. Some videos or account states may block autoplay; use the player's controls if needed. This extension does not extract or proxy YouTube's underlying media stream.
 
-Generic pages use the video's native controls. Custom players that place controls outside their video may need a site-specific adapter. Cross-origin embedded players are not included in this first version.
+The player-only tab supports YouTube watch, Shorts, live, embed, and `youtu.be` video URLs. Other sites are not supported by this viewer.
 
 ## Tests
 
