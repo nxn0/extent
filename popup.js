@@ -54,12 +54,10 @@ toggleModeButton.addEventListener("click", async () => {
   showStatus("");
   try {
     const requestedOrigins = [...new Set([currentPattern, "https://www.youtube.com/*"])];
-    if (!await browser.permissions.contains({ origins: requestedOrigins })) {
-      const granted = await browser.permissions.request({ origins: requestedOrigins });
-      if (!granted) {
-        showStatus("Site access is needed to read the video time and toggle the player view.");
-        return;
-      }
+    const granted = await browser.permissions.request({ origins: requestedOrigins });
+    if (!granted) {
+      showStatus("Site access is needed to toggle the player view.");
+      return;
     }
     const result = await browser.runtime.sendMessage({
       type: "VIDEO_VIEWPORT_OPEN_VIEWER",

@@ -26,5 +26,33 @@
     }
   });
   document.documentElement.append(button);
+
+  function positionInMastheadGap() {
+    const mic = document.querySelector('[aria-label="Search with your voice"]');
+    const endControls = document.querySelector("#end");
+    if (!mic || !endControls) {
+      button.style.left = "50%";
+      button.style.transform = "translateX(-50%)";
+      return;
+    }
+
+    const micRect = mic.getBoundingClientRect();
+    const endRect = endControls.getBoundingClientRect();
+    const estimatedWidth = button.offsetWidth || 150;
+    const gapStart = micRect.right + 8;
+    const gapEnd = endRect.left - 8;
+    const gapCenter = (gapStart + gapEnd) / 2;
+
+    if (gapEnd > gapStart) {
+      button.style.left = `${Math.max(8, gapCenter - estimatedWidth / 2)}px`;
+      button.style.transform = "none";
+    } else {
+      button.style.left = "50%";
+      button.style.transform = "translateX(-50%)";
+    }
+  }
+
+  requestAnimationFrame(positionInMastheadGap);
+  window.addEventListener("resize", positionInMastheadGap);
   globalThis.__videoViewportButton = button;
 })();
