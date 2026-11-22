@@ -22,7 +22,7 @@ class EventHook {
   }
 }
 
-function makeBrowserHarness({ sourceUrl, playbackTime = 87, styleWorks = true }) {
+function makeBrowserHarness({ sourceUrl, styleWorks = true }) {
   const calls = [];
   const onMessage = new EventHook();
   const onUpdated = new EventHook();
@@ -54,8 +54,8 @@ function makeBrowserHarness({ sourceUrl, playbackTime = 87, styleWorks = true })
     scripting: {
       executeScript: async ({ target, func }) => {
         calls.push(["execute", target.tabId, func.toString()]);
-        if (target.tabId === sourceTab.id && /currentTime/.test(func.toString())) {
-          return [{ result: { url: sourceUrl, time: playbackTime } }];
+        if (target.tabId === sourceTab.id && /location\.href/.test(func.toString())) {
+          return [{ result: sourceUrl }];
         }
         if (target.tabId === 11 && /getComputedStyle/.test(func.toString())) {
           return [{ result: styleWorks }];
@@ -87,8 +87,7 @@ function makeBrowserHarness({ sourceUrl, playbackTime = 87, styleWorks = true })
 
 test("applies player-only CSS to the active YouTube tab without navigating", async () => {
   const harness = makeBrowserHarness({
-    sourceUrl: "https://www.youtube.com/watch?v=sX2c8cYPZ6o&feature=share",
-    playbackTime: 123.8
+    sourceUrl: "https://www.youtube.com/watch?v=sX2c8cYPZ6o&feature=share"
   });
 
   const result = await harness.openViewer();

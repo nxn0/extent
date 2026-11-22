@@ -1,6 +1,6 @@
 const VIEWER_STYLE = "src/viewer.css";
 const YOUTUBE_PATTERN = "https://www.youtube.com/*";
-const viewerStates = new Map();
+const viewerStates = new Set();
 
 function registeredScriptId(pattern) {
   return `video-viewport-${pattern.replace(/[^a-z0-9]/gi, "-")}`;
@@ -49,21 +49,16 @@ async function openViewer(tabId) {
       return { opened: false, restored: true };
     }
 
-    const sourceTab = await browser.tabs.get(tabId);
     if (!await browser.permissions.contains({ origins: [YOUTUBE_PATTERN] })) {
       return { error: "Allow YouTube access so the player-only layout can be applied." };
     }
 
-    const [{ result: playback }] = await browser.scripting.executeScript({
+    const [{ result: url }] = await browser.scripting.executeScript({
       target: { tabId },
-      func: () => {
-        const video = document.querySelector("#movie_player video");
-        return { url: location.href, time: video?.currentTime || 0 };
-      }
+      func: () => location.href
     });
 
-    const videoId = globalThis.VideoViewportCore.parseYouTubeVideoId(playback.url);
-    if (!videoId) {
+    if (!globalThis.VideoViewportCore.parseYouTubeVideoId(url)) {
       return { error: "Open a YouTube video page to use the player-only view." };
     }
 
@@ -76,7 +71,7 @@ async function openViewer(tabId) {
       throw new Error("YouTube loaded, but the player-only layout did not apply.");
     }
 
-    viewerStates.set(tabId, { videoId, currentTime: playback.time });
+    viewerStates.add(tabId);
     return { opened: true };
   } catch (error) {
     await browser.scripting.removeCSS({ target: { tabId }, files: [VIEWER_STYLE] }).catch(() => undefined);

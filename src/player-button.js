@@ -1,8 +1,4 @@
 (function () {
-  if (new URLSearchParams(location.search).get("vv") === "1") {
-    return;
-  }
-
   document.querySelectorAll(".vv-quick-button").forEach((existingButton) => existingButton.remove());
   if (globalThis.__videoViewportButton) {
     globalThis.__videoViewportButton.remove();

@@ -5,22 +5,6 @@
     module.exports = core;
   }
 })(globalThis, function () {
-  function selectVideo(videos) {
-    return Array.from(videos)
-      .map((video) => {
-        const bounds = video.getBoundingClientRect();
-        const area = Math.max(0, bounds.width) * Math.max(0, bounds.height);
-        return { video, area, isPlaying: !video.paused && !video.ended };
-      })
-      .filter((candidate) => candidate.area > 0)
-      .sort((left, right) => {
-        if (left.isPlaying !== right.isPlaying) {
-          return Number(right.isPlaying) - Number(left.isPlaying);
-        }
-        return right.area - left.area;
-      })[0]?.video ?? null;
-  }
-
   function sitePattern(rawUrl) {
     try {
       const url = new URL(rawUrl);
@@ -54,5 +38,5 @@
     }
   }
 
-  return { selectVideo, sitePattern, parseYouTubeVideoId };
+  return { sitePattern, parseYouTubeVideoId };
 });
