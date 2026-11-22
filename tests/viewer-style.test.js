@@ -30,7 +30,9 @@ test("quick viewer button uses the top masthead gap", () => {
   const quickCss = readFileSync(new URL("../src/player-button.css", `file://${__filename}`), "utf8");
   const quickJs = readFileSync(new URL("../src/player-button.js", `file://${__filename}`), "utf8");
   assert.match(quickCss, /\.vv-quick-button\s*\{[^}]*top:\s*8px/);
+  assert.match(quickCss, /\.vv-quick-button\s*\{[^}]*height:\s*40px/);
   assert.match(quickJs, /positionInMastheadGap/);
   assert.match(quickJs, /Search with your voice/);
   assert.match(quickJs, /querySelector\("#end"\)/);
+  assert.match(quickJs, /querySelectorAll\("\.vv-quick-button"\)/);
 });
